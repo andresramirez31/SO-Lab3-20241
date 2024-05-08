@@ -17,22 +17,34 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <sys/time.h>
+#include <pthread.h>
+
+// Variables to obtain command line parameters
+unsigned int seed = 1;
+int p = 100000;
+int n_threads = 2;
+int max_iters = 1000;
+
+// Variables to perform SAXPY operation
+double* X;
+double a;
+double* Y;
+double* Y_avgs;
+int i, it;
+
+// Variables to get execution time
+struct timeval t_start, t_end;
+double exec_time;
+
+void *saxpyCalculation(void *);
 
 int main(int argc, char* argv[]){
-	// Variables to obtain command line parameters
-	unsigned int seed = 1;
-  	int p = 10000000;
-  	int n_threads = 2;
-  	int max_iters = 1000;
-  	// Variables to perform SAXPY operation
-	double* X;
-	double a;
-	double* Y;
-	double* Y_avgs;
-	int i, it;
-	// Variables to get execution time
-	struct timeval t_start, t_end;
-	double exec_time;
+	
+  	
+  
+	
+	// Variables to initialize parallelization
+	pthread_t p1, p2;
 
 	// Getting input values
 	int opt;
@@ -98,19 +110,10 @@ int main(int argc, char* argv[]){
 	printf("a= %f \n", a);	
 #endif
 
-	/*
-	 *	Function to parallelize 
-	 */
-	gettimeofday(&t_start, NULL);
-	//SAXPY iterative SAXPY mfunction
-	for(it = 0; it < max_iters; it++){
-		for(i = 0; i < p; i++){
-			Y[i] = Y[i] + a * X[i];
-			Y_avgs[it] += Y[i];
-		}
-		Y_avgs[it] = Y_avgs[it] / p;
-	}
-	gettimeofday(&t_end, NULL);
+pthread_create(&p1, NULL, saxpyCalculation , NULL);
+pthread_create(&p2, NULL, saxpyCalculation , NULL);
+pthread_join(p1, NULL);	
+pthread_join(p2, NULL);	
 
 #ifdef DEBUG
 	printf("RES: final vector Y= [ ");
@@ -128,3 +131,23 @@ int main(int argc, char* argv[]){
 	printf("Last 3 values of Y_avgs: %f, %f, %f \n", Y_avgs[max_iters-3], Y_avgs[max_iters-2], Y_avgs[max_iters-1]);
 	return 0;
 }	
+
+
+void *saxpyCalculation(void *arg){
+
+	/*
+	 *	Function to parallelize 
+	 */
+	
+	gettimeofday(&t_start, NULL);
+	//SAXPY iterative SAXPY mfunction
+	for(it = 0; it < max_iters; it++){
+		for(i = 0; i < p; i++){
+			Y[i] = Y[i] + a * X[i];
+			Y_avgs[it] += Y[i];
+		}
+		Y_avgs[it] = Y_avgs[it] / p;
+	}
+	gettimeofday(&t_end, NULL);
+
+}
