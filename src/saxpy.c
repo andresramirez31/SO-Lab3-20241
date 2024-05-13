@@ -18,6 +18,7 @@
 #include <assert.h>
 #include <sys/time.h>
 #include <pthread.h>
+#include <bits/getopt_core.h>
 
 // Variables to obtain command line parameters
 unsigned int seed = 1;
@@ -36,6 +37,10 @@ int i, it;
 struct timeval t_start, t_end;
 double exec_time;
 
+
+// Variables to control the threads
+pthread_mutex_t m1 = PTHREAD_MUTEX_INITIALIZER;
+
 void *saxpyCalculation(void *);
 
 int main(int argc, char* argv[]){
@@ -45,6 +50,7 @@ int main(int argc, char* argv[]){
 	
 	// Variables to initialize parallelization
 	pthread_t p1, p2;
+	
 
 	// Getting input values
 	int opt;
@@ -142,11 +148,14 @@ void *saxpyCalculation(void *arg){
 	gettimeofday(&t_start, NULL);
 	//SAXPY iterative SAXPY mfunction
 	for(it = 0; it < max_iters; it++){
+		pthread_mutex_lock(&m1);
 		for(i = 0; i < p; i++){
 			Y[i] = Y[i] + a * X[i];
 			Y_avgs[it] += Y[i];
+			
 		}
 		Y_avgs[it] = Y_avgs[it] / p;
+		pthread_mutex_unlock(&m1);
 	}
 	gettimeofday(&t_end, NULL);
 
