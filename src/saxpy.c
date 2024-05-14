@@ -45,11 +45,6 @@ void *saxpyCalculation(void *);
 
 int main(int argc, char* argv[]){
 	
-  	
-  
-	
-	// Variables to initialize parallelization
-	pthread_t p1, p2;
 	
 
 	// Getting input values
@@ -81,7 +76,11 @@ int main(int argc, char* argv[]){
 			exit(EXIT_FAILURE);
 		}  
 	}  
+	
 	srand(seed);
+
+	// Variables to initialize parallelization
+	pthread_t t[n_threads];
 
 	printf("p = %d, seed = %d, n_threads = %d, max_iters = %d\n", \
 	 p, seed, n_threads, max_iters);	
@@ -115,11 +114,15 @@ int main(int argc, char* argv[]){
 
 	printf("a= %f \n", a);	
 #endif
+for(int j = 0; j < n_threads; j++){
+	pthread_create(&t[j], NULL, saxpyCalculation , NULL);
+}
 
-pthread_create(&p1, NULL, saxpyCalculation , NULL);
-pthread_create(&p2, NULL, saxpyCalculation , NULL);
-pthread_join(p1, NULL);	
-pthread_join(p2, NULL);	
+for(int j = 0; j < n_threads; j++){
+	pthread_join(t[j], NULL);	
+}
+
+
 
 #ifdef DEBUG
 	printf("RES: final vector Y= [ ");
