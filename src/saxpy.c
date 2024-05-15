@@ -20,6 +20,11 @@
 #include <pthread.h>
 #include <bits/getopt_core.h>
 
+typedef struct {
+    int start;
+    int end;
+} ThreadArg;
+
 // Variables to obtain command line parameters
 unsigned int seed = 1;
 int p = 100000;
@@ -44,6 +49,13 @@ pthread_mutex_t m1 = PTHREAD_MUTEX_INITIALIZER;
 void *saxpyCalculation(void *);
 
 int main(int argc, char* argv[]){
+	
+  	
+  
+	
+	// Variables to partition the work in threads
+	int part; 
+	
 	
 	
 
@@ -76,11 +88,12 @@ int main(int argc, char* argv[]){
 			exit(EXIT_FAILURE);
 		}  
 	}  
-	
-	srand(seed);
 
+	part = max_iters / n_threads;
 	// Variables to initialize parallelization
 	pthread_t t[n_threads];
+	ThreadArg args[n_threads];
+	srand(seed);
 
 	printf("p = %d, seed = %d, n_threads = %d, max_iters = %d\n", \
 	 p, seed, n_threads, max_iters);	
@@ -114,14 +127,18 @@ int main(int argc, char* argv[]){
 
 	printf("a= %f \n", a);	
 #endif
+
+gettimeofday(&t_start, NULL);
 for(int j = 0; j < n_threads; j++){
-	pthread_create(&t[j], NULL, saxpyCalculation , NULL);
+	args[j].start = part * j;
+	args[j].end = part * (j + 1);
+	pthread_create(&t[j], NULL, saxpyCalculation , &args[j]);
 }
 
 for(int j = 0; j < n_threads; j++){
 	pthread_join(t[j], NULL);	
 }
-
+gettimeofday(&t_end, NULL);
 
 
 #ifdef DEBUG
@@ -147,19 +164,21 @@ void *saxpyCalculation(void *arg){
 	/*
 	 *	Function to parallelize 
 	 */
+	ThreadArg* thread_arg = (ThreadArg*) arg;
 	
-	gettimeofday(&t_start, NULL);
 	//SAXPY iterative SAXPY mfunction
-	for(it = 0; it < max_iters; it++){
-		pthread_mutex_lock(&m1);
+	for(it = thread_arg->start; it < thread_arg->end; it++){
+		
 		for(i = 0; i < p; i++){
+			pthread_mutex_lock(&m1);
 			Y[i] = Y[i] + a * X[i];
 			Y_avgs[it] += Y[i];
-			
+			pthread_mutex_unlock(&m1);
 		}
 		Y_avgs[it] = Y_avgs[it] / p;
-		pthread_mutex_unlock(&m1);
+		
 	}
-	gettimeofday(&t_end, NULL);
-
+	
+	sleep(1);
+	pthread_exit(0);
 }
